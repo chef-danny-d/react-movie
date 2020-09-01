@@ -31,3 +31,7 @@ src/\.sass-cache/
 package-lock\.json
 
 README\.old\.md
+
+.env
+
+.eslintrc.json
