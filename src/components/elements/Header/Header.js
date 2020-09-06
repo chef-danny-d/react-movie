@@ -12,11 +12,6 @@ const Header = () => {
                         alt="RMDB Logo"
                         className="rmdb-logo"
                     />
-                    <img
-                        src="https://placeholder.com/wp-content/uploads/2018/10/placeholder.com-logo3.png"
-                        alt="TMDB logo"
-                        className="rmdb-tmdb-logo"
-                    />
                 </Link>
             </div>
         </div>

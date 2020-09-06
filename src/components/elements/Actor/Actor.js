@@ -1,6 +1,7 @@
 import React from 'react'
 import './_actor.sass'
 import { IMAGE_BASE_URL } from '../../../config'
+import PropTypes from 'prop-types'
 
 const Actor = (props) => {
     const POSTER_SIZE = 'w154'
@@ -12,7 +13,7 @@ const Actor = (props) => {
                         ? `${IMAGE_BASE_URL}${POSTER_SIZE}${props.actor.profile_path}`
                         : './images/no_image.jpg'
                 }
-                alt={`${props.actor.name}'s thumbnail picture`}
+                alt={`${props.actor.name}'s thumbnail`}
             />
             <span className="rmdb-actor-name">{props.actor.name}</span>
             <span className="rmdb-actor-character">
@@ -20,6 +21,10 @@ const Actor = (props) => {
             </span>
         </div>
     )
+}
+
+Actor.propTypes = {
+    actor: PropTypes.object,
 }
 
 export default Actor

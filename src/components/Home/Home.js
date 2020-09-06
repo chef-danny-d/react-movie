@@ -6,12 +6,14 @@ import {
     POSTER_SIZE,
     BACKDROP_SIZE,
 } from '../../config'
-import HeroImage from '../elements/HeroImage/HeroImage'
-import SearchBar from '../elements/SearchBar/SearchBar'
-import FourColGrid from '../elements/FourColGrid/FourColGrid'
-import MovieThumb from '../elements/MovieThumb/MovieThumb'
-import LoadMoreBtn from '../elements/LoadMoreBtn/LoadMoreBtn'
-import Spinner from '../elements/Spinner/Spinner'
+import {
+    HeroImage,
+    SearchBar,
+    FourColGrid,
+    MovieThumb,
+    LoadMoreBtn,
+    Spinner,
+} from '../elements'
 import '../../App.min.css'
 
 class Home extends Component {
@@ -26,9 +28,14 @@ class Home extends Component {
 
     //fetching the API objects using the URL and KEY and other attributes
     componentDidMount() {
-        this.setState({ loading: true })
-        const endpoint = `${API_URL}movie/popular?api_key=${API_KEY}&language=en-US&page=1`
-        this.fetchItems(endpoint)
+        if (localStorage.getItem('Home')) {
+            const state = JSON.parse(localStorage.getItem('Home'))
+            this.setState({ ...state })
+        } else {
+            this.setState({ loading: true })
+            const endpoint = `${API_URL}movie/popular?api_key=${API_KEY}&language=en-US&page=1`
+            this.fetchItems(endpoint)
+        }
     }
 
     searchItems = (searchTerm) => {
@@ -68,14 +75,19 @@ class Home extends Component {
         fetch(endpoint)
             .then((result) => result.json()) //making sure the data is in json format
             .then((result) => {
-                this.setState({
-                    //updating the state to dynamic fetched data
-                    movies: [...this.state.movies, ...result.results],
-                    heroImage: this.state.heroImage || result.results[0],
-                    loading: false,
-                    currentPage: result.page,
-                    totalPages: result.total_pages,
-                })
+                this.setState(
+                    {
+                        //updating the state to dynamic fetched data
+                        movies: [...this.state.movies, ...result.results],
+                        heroImage: this.state.heroImage || result.results[0],
+                        loading: false,
+                        currentPage: result.page,
+                        totalPages: result.total_pages,
+                    },
+                    () => {
+                        localStorage.setItem('Home', JSON.stringify(this.state))
+                    }
+                )
             })
     }
     render() {
