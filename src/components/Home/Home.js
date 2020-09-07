@@ -15,6 +15,7 @@ import {
     Spinner,
 } from '../elements'
 import '../../App.min.css'
+import { createEndpoint } from '../../helpers'
 
 class Home extends Component {
     state = {
@@ -23,7 +24,7 @@ class Home extends Component {
         loading: false,
         currentPage: 0,
         totalPages: 0,
-        searchTerm: '',
+        searchTerm: null,
     }
 
     //fetching the API objects using the URL and KEY and other attributes
@@ -33,86 +34,100 @@ class Home extends Component {
             this.setState({ ...state })
         } else {
             this.setState({ loading: true })
-            const endpoint = `${API_URL}movie/popular?api_key=${API_KEY}&language=en-US&page=1`
-            this.fetchItems(endpoint)
+            this.fetchItems(
+                createEndpoint(
+                    API_URL,
+                    API_KEY,
+                    'movie/popular',
+                    false,
+                    '',
+                    this.state.currentPage
+                )
+            )
         }
     }
 
-    searchItems = (searchTerm) => {
-        let endpoint = ''
-        this.setState({
-            movies: [],
-            loading: true,
-            searchTerm,
-        })
-
-        if (searchTerm === '') {
-            endpoint = `${API_URL}movie/popular?api_key=${API_KEY}&language=en-US&page=1`
-        } else {
-            endpoint = `${API_URL}search/movie?api_key=${API_KEY}&language=en-US&query=${searchTerm}`
-        }
-        this.fetchItems(endpoint)
-    }
-
-    loadMoreItems = () => {
-        let endpoint = ''
-        this.setState({ loading: true })
-
-        if (this.state.searchTerm === '') {
-            endpoint = `${API_URL}movie/popular?api_key=${API_KEY}&language=en-US&page=${
-                this.state.currentPage + 1
-            }`
-        } else {
-            endpoint = `${API_URL}search/movie?api_key=${API_KEY}&language=en-US&query=${
-                this.state.searchTerm
-            }&page=${this.state.currentPage + 1}`
-        }
-        this.fetchItems(endpoint)
+    updateItems = (loadMore, searchTerm) => {
+        this.setState(
+            {
+                movies: loadMore ? [...this.state.movies] : [],
+                loading: true,
+                searchTerm: loadMore ? this.state.searchTerm : searchTerm,
+            },
+            () => {
+                this.fetchItems(
+                    !this.state.searchTerm
+                        ? createEndpoint(
+                              API_URL,
+                              API_KEY,
+                              'movie/popular',
+                              loadMore,
+                              '',
+                              this.state.currentPage
+                          )
+                        : createEndpoint(
+                              API_URL,
+                              API_KEY,
+                              'search/movie',
+                              loadMore,
+                              this.state.searchTerm,
+                              this.state.currentPage
+                          )
+                )
+            }
+        )
     }
 
     //method to extract the data from the API
-    fetchItems = (endpoint) => {
-        fetch(endpoint)
-            .then((result) => result.json()) //making sure the data is in json format
-            .then((result) => {
-                this.setState(
-                    {
-                        //updating the state to dynamic fetched data
-                        movies: [...this.state.movies, ...result.results],
-                        heroImage: this.state.heroImage || result.results[0],
-                        loading: false,
-                        currentPage: result.page,
-                        totalPages: result.total_pages,
-                    },
-                    () => {
-                        localStorage.setItem('Home', JSON.stringify(this.state))
-                    }
-                )
-            })
+    fetchItems = async (endpoint) => {
+        const { movies, heroImage } = this.state
+        const result = await (await fetch(endpoint)).json()
+        try {
+            this.setState(
+                {
+                    //updating the state to dynamic fetched data
+                    movies: [...movies, ...result.results],
+                    heroImage: heroImage || result.results[0],
+                    loading: false,
+                    currentPage: result.page,
+                    totalPages: result.total_pages,
+                },
+                () => {
+                    localStorage.setItem('Home', JSON.stringify(this.state))
+                }
+            )
+        } catch (error) {
+            console.error(error)
+        }
     }
+
     render() {
+        const {
+            movies,
+            heroImage,
+            loading,
+            currentPage,
+            totalPages,
+            searchTerm,
+        } = this.state
         return (
             <div className="rmdb-home">
-                {this.state.heroImage ? (
+                {heroImage && !searchTerm ? (
                     <div>
                         <HeroImage
-                            image={`${IMAGE_BASE_URL}${BACKDROP_SIZE}${this.state.heroImage.backdrop_path}`}
-                            title={this.state.heroImage.original_title}
-                            text={this.state.heroImage.overview}
+                            image={`${IMAGE_BASE_URL}${BACKDROP_SIZE}${heroImage.backdrop_path}`}
+                            title={heroImage.original_title}
+                            text={heroImage.overview}
                         />
-                        <SearchBar callback={this.searchItems} />
                     </div>
                 ) : null}
+                <SearchBar callback={this.updateItems} />
                 <div className="rmdb-home-grid">
                     <FourColGrid
-                        header={
-                            this.state.searchTerm
-                                ? 'Search Result'
-                                : 'Popular Movies'
-                        }
-                        loading={this.state.loading}
+                        header={searchTerm ? 'Search Result' : 'Popular Movies'}
+                        loading={loading}
                     >
-                        {this.state.movies.map((element, i) => {
+                        {movies.map((element, i) => {
                             return (
                                 <MovieThumb
                                     key={i}
@@ -128,12 +143,11 @@ class Home extends Component {
                             )
                         })}
                     </FourColGrid>
-                    {this.state.loading ? <Spinner /> : null}
-                    {this.state.currentPage <= this.state.totalPages &&
-                    !this.state.loading ? (
+                    {loading ? <Spinner /> : null}
+                    {currentPage < totalPages && !loading ? (
                         <LoadMoreBtn
                             text="Load More"
-                            onClick={this.loadMoreItems}
+                            onClick={this.updateItems}
                         />
                     ) : null}
                 </div>

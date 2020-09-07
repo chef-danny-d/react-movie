@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import './_navigation.sass'
+import PropTypes from 'prop-types'
 
 const Navigation = (props) => {
     return (
@@ -14,6 +15,10 @@ const Navigation = (props) => {
             </div>
         </div>
     )
+}
+
+Navigation.propTypes = {
+    movie: PropTypes.string,
 }
 
 export default Navigation
